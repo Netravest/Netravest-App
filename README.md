@@ -1,6 +1,6 @@
 # 🛡️ Netravest
 
-Netravest is a Flutter-based companion application engineered to integrate seamlessly with smart assistive vests for visually impaired individuals. It serves as a centralized safety hub, enabling real-time monitoring of vest sensors and camera feeds, rapid SOS broadcasting, instant GPS location sharing, and customizable speed-dial emergency contacts to significantly enhance user safety, mobility, and independence.
+Netravest is a Flutter-based companion application developed as a research prototype to interface with smart assistive vests for visually impaired individuals. As an academic research project, it serves as a safety dashboard and telemetry interface, enabling real-time monitoring of vest sensors, camera status feeds, rapid SOS broadcasting, and location sharing, designed to evaluate and improve the safety, independence, and mobility of visually impaired users.
 
 ---
 
@@ -76,5 +76,5 @@ This project leverages industry-standard packages to provide robust features:
 
 ---
 
-## 📄 License
-This project is private and proprietary. All rights reserved. Created as part of the Smart Vest Companion development ecosystem.
+## 🔬 Research & Academic License
+This repository contains proprietary research material and software code developed for academic research purposes. It is private, confidential, and not intended for public or commercial distribution. All rights reserved by the researchers.
