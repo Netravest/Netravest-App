@@ -18,7 +18,7 @@ class InfoPanel extends StatelessWidget {
       padding: const EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(50),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -94,7 +94,7 @@ class InfoPanel extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 255, 74, 0),
-                borderRadius: BorderRadius.circular(35),
+                borderRadius: BorderRadius.circular(45),
               ),
               child: const Icon(Icons.refresh_rounded, color: Colors.black, size: 80),
             ),

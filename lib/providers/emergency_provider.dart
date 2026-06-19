@@ -8,6 +8,14 @@ class EmergencyProvider with ChangeNotifier {
   final bool _SensorActive = true;
   final bool _cameraActive = true;
 
+  // State baru untuk ekspansi telepon & daftar kontak
+  bool _isCallExpanded = false;
+  final List<Map<String, String>> _contacts = [
+    {'name': 'Bile Bondol', 'phone': '0812-3456-7890'},
+    {'name': 'Polisi', 'phone': '110'},
+    {'name': 'Ambulans', 'phone': '118'},
+  ];
+
   // Getter
   String get address => _address;
   String get currentTime => _currentTime;
@@ -15,6 +23,18 @@ class EmergencyProvider with ChangeNotifier {
   int get batteryLevel => _batteryLevel;
   bool get isSensorActive => _SensorActive;
   bool get isCameraActive => _cameraActive;
+  bool get isCallExpanded => _isCallExpanded;
+  List<Map<String, String>> get contacts => _contacts;
+
+  void toggleCallExpansion() {
+    _isCallExpanded = !_isCallExpanded;
+    notifyListeners();
+  }
+
+  void addContact(String name, String phone) {
+    _contacts.add({'name': name, 'phone': phone});
+    notifyListeners();
+  }
 
   void showPopupSnackBar(
     BuildContext context,
@@ -63,10 +83,11 @@ class EmergencyProvider with ChangeNotifier {
     );
   }
 
-  void makeCall(BuildContext context) {
+  void makeCall(BuildContext context, {String? name, String? phone}) {
+    final target = name != null && phone != null ? '$name ($phone)' : 'layanan darurat';
     showPopupSnackBar(
       context,
-      '📞 Menghubungi layanan darurat...',
+      '📞 Menghubungi $target...',
       Colors.green,
     );
   }
@@ -76,15 +97,15 @@ class EmergencyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-    void openSettings(BuildContext context) {
+  void openSettings(BuildContext context) {
     showPopupSnackBar(context, '⚙️ Membuka Pengaturan aplikasi...', Colors.grey);
   }
 
-    void toggleFloatingWidget(BuildContext context) {
+  void toggleFloatingWidget(BuildContext context) {
     showPopupSnackBar(context, '📱 Mengaktifkan Widget Mengambang...', Colors.deepOrange);
   }
 
- void manageDevice(BuildContext context) {
+  void manageDevice(BuildContext context) {
     showPopupSnackBar(context, '🛡️ Membuka menu kelola Perangkat...', Colors.grey);
   }
 }
