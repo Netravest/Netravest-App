@@ -1,20 +1,20 @@
-# 🛡️ Netravest
+# Netravest
 
 Netravest is a Flutter-based companion application developed as a research prototype to interface with smart assistive vests for visually impaired individuals. As an academic research project, it serves as a safety dashboard and telemetry interface, enabling real-time monitoring of vest sensors, camera status feeds, rapid SOS broadcasting, and location sharing, designed to evaluate and improve the safety, independence, and mobility of visually impaired users.
 
 ---
 
-## 🌟 Core Features
+## Core Features
 
-- **📡 Vest Telemetry Integration**: Real-time status indicators for camera feeds and telemetry sensors embedded within the smart vest.
-- **🚨 Instant SOS Trigger**: A prominent, single-tap SOS button that triggers urgent alerts and logs emergency events instantly.
-- **📍 GPS Location Services**: Instant geolocation tracking with options to copy raw address coordinates to the clipboard and share live GPS points with relatives.
-- **📞 Dynamic Call Expansion**: An expandable speed-dial tile that transitions smoothly into a full-height emergency contact manager, complete with dynamic contact additions.
-- **⚡ Provider State Management**: Organized using the Provider pattern, separating clean business logic (`EmergencyProvider`) from modular UI components to ensure lightweight rendering and selective rebuild performance.
+- **Vest Telemetry Integration**: Real-time status indicators for camera feeds and telemetry sensors embedded within the smart vest.
+- **Instant SOS Trigger**: A prominent, single-tap SOS button that triggers urgent alerts and logs emergency events instantly.
+- **GPS Location Services**: Instant geolocation tracking with options to copy raw address coordinates to the clipboard and share live GPS points with relatives.
+- **Dynamic Call Expansion**: An expandable speed-dial tile that transitions smoothly into a full-height emergency contact manager, complete with dynamic contact additions.
+- **Provider State Management**: Organized using the Provider pattern, separating clean business logic (`EmergencyProvider`) from modular UI components to ensure lightweight rendering and selective rebuild performance.
 
 ---
 
-## 📁 Project Architecture & Structure
+## Project Architecture & Structure
 
 The codebase is refactored into a modular directory structure to ensure clean architecture and scalability:
 
@@ -34,7 +34,7 @@ lib/
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 Make sure you have installed the following requirements:
@@ -68,7 +68,7 @@ Make sure you have installed the following requirements:
 
 ---
 
-## ⚙️ Dependencies
+## Dependencies
 
 This project leverages industry-standard packages to provide robust features:
 * [provider](https://pub.dev/packages/provider) - State management and dependency injection.
@@ -76,5 +76,5 @@ This project leverages industry-standard packages to provide robust features:
 
 ---
 
-## 🔬 Research & Academic License
+## Research & Academic License
 This repository contains proprietary research material and software code developed for academic research purposes. It is private, confidential, and not intended for public or commercial distribution. All rights reserved by the researchers.
