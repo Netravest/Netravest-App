@@ -6,30 +6,36 @@ Netravest is a Flutter-based companion application developed as a research proto
 
 ## Core Features
 
-- **Vest Telemetry Integration**: Real-time status indicators for camera feeds and telemetry sensors embedded within the smart vest.
-- **Instant SOS Trigger**: A prominent, single-tap SOS button that triggers urgent alerts and logs emergency events instantly.
-- **GPS Location Services**: Instant geolocation tracking with options to copy raw address coordinates to the clipboard and share live GPS points with relatives.
-- **Dynamic Call Expansion**: An expandable speed-dial tile that transitions smoothly into a full-height emergency contact manager, complete with dynamic contact additions.
-- **Provider State Management**: Organized using the Provider pattern, separating clean business logic (`EmergencyProvider`) from modular UI components to ensure lightweight rendering and selective rebuild performance.
+- **Real-Time Vest Telemetry**: Live indicators for battery levels (UPS Hat), sensor connectivity (LiDAR), and camera status over MQTT protocol.
+- **Vest Online/Offline Indicator**: Visual status badge showing whether the companion application is actively connected to the vest broker.
+- **Automated Reverse Geocoding**: Automatically translates raw GPS coordinates received from the vest (Ublox Neo M8N) into human-readable street addresses using the free OpenStreetMap Nominatim API.
+- **Instant SOS & Geolocation Broadcast**: Single-tap SOS button that instantly opens WhatsApp to broadcast emergency messages with a Google Maps link of the current GPS coordinate.
+- **Smart WhatsApp / Call Integrations**: Smart speed-dial panel that opens WhatsApp chats/calls for normal contacts, while automatically falling back to traditional cellular dialers for short emergency numbers (e.g., 110, 118).
+- **Emergency Contact Manager**: Seamlessly expand the phone panel to add new emergency contacts or delete existing ones, immediately updating the telemetry UI.
+- **Decoupled Architecture**: Logic is cleanly separated into dedicated Geocoding, Telemetry, and Provider state management layers.
 
 ---
 
 ## Project Architecture & Structure
 
-The codebase is refactored into a modular directory structure to ensure clean architecture and scalability:
+The codebase is structured using a service-provider modular pattern:
 
 ```text
 lib/
 ├── main.dart                      # App entry point & Provider initialization
-├── providers/
-│   └── emergency_provider.dart    # App state & business logic
 ├── pages/
 │   └── homepage_emergency.dart    # Main dashboard grid layout
+├── providers/
+│   └── emergency_provider.dart    # State manager (holds UI state, delegates logic to services)
+├── services/
+│   ├── geocoding_service.dart     # Service handling reverse geocoding via Nominatim API
+│   └── telemetry_service.dart     # Service managing MQTT connection & subscriptions
 └── widgets/
-    ├── address_bar.dart           # GPS Location component
-    ├── info_panel.dart            # Sensor, battery, and clock indicators
-    ├── menu_button.dart           # General dashboard tiles
-    └── sos_button.dart            # Main SOS gesture trigger widget
+    ├── address_bar.dart           # GPS Address bar display & location sharing trigger
+    ├── expanded_call_panel.dart   # Extracted speed dial list & contact manager
+    ├── info_panel.dart            # Battery progress, LiDAR, Camera & connection indicators
+    ├── settings_button.dart       # General styled dashboard buttons
+    └── sos_button.dart            # Big SOS trigger widget
 ```
 
 ---
@@ -55,13 +61,7 @@ Make sure you have installed the following requirements:
    flutter pub get
    ```
 
-3. **Configure App Icons & Launch Screen** (Optional/Already pre-built):
-   To regenerate launcher icons or configure launch layouts:
-   ```bash
-   dart run flutter_launcher_icons
-   ```
-
-4. **Run the Project**:
+3. **Run the Project**:
    ```bash
    flutter run
    ```
@@ -72,6 +72,9 @@ Make sure you have installed the following requirements:
 
 This project leverages industry-standard packages to provide robust features:
 * [provider](https://pub.dev/packages/provider) - State management and dependency injection.
+* [http](https://pub.dev/packages/http) - Reverse geocoding network request client.
+* [url_launcher](https://pub.dev/packages/url_launcher) - Launching external apps (WhatsApp & Phone dialers).
+* [mqtt_client](https://pub.dev/packages/mqtt_client) - Real-time subscriber to the vest telemetry broker.
 * [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons) - Automating cross-platform launcher icon setup.
 
 ---
