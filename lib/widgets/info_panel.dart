@@ -9,13 +9,15 @@ class InfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.read<EmergencyProvider>();
     
-    // Mengamati data spesifik menggunakan context.select agar widget tidak ter-rebuild tidak penting
     final time = context.select((EmergencyProvider p) => p.currentTime);
     final date = context.select((EmergencyProvider p) => p.currentDate);
     final battery = context.select((EmergencyProvider p) => p.batteryLevel);
+    final isSensorActive = context.select((EmergencyProvider p) => p.isSensorActive);
+    final isCameraActive = context.select((EmergencyProvider p) => p.isCameraActive);
+    final isMqttConnected = context.select((EmergencyProvider p) => p.isMqttConnected);
 
     return Container(
-      padding: const EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
+      padding: const EdgeInsets.only(left: 10, top: 8, right: 10, bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(50),
@@ -25,7 +27,7 @@ class InfoPanel extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => provider.showPopupSnackBar(
-              context, '⏰ Waktu saat ini: $time | Tanggal: $date', Colors.blueGrey,
+              context, '⏰ Waktu: $time | Tanggal: $date', Colors.blueGrey,
             ),
             child: Column(
               children: [
@@ -46,34 +48,67 @@ class InfoPanel extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 4),
+                // Indikator Koneksi MQTT ke Rompi
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isMqttConnected ? Colors.green : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isMqttConnected ? 'ROMPI ONLINE' : 'ROMPI OFFLINE',
+                      style: TextStyle(
+                        color: isMqttConnected ? Colors.green[800] : Colors.red[800],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildSmallGreenIcon(
+              // Indikator Status Sensor LiDAR
+              _buildStatusIcon(
                 Icons.sensors,
+                isActive: isSensorActive,
                 onTap: () => provider.showPopupSnackBar(
-                  context, '📡 Sensor aktif dan memantau status...', Colors.green,
+                  context,
+                  isSensorActive ? '📡 Sensor LiDAR Aktif.' : '📡 Sensor LiDAR Mati.',
+                  isSensorActive ? Colors.green : Colors.red,
                 ),
               ),
-              _buildSmallGreenIcon(
+              // Indikator Status Kamera
+              _buildStatusIcon(
                 Icons.camera_alt_rounded,
+                isActive: isCameraActive,
                 onTap: () => provider.showPopupSnackBar(
-                  context, '📷 Akses kamera darurat aktif...', Colors.green,
+                  context,
+                  isCameraActive ? '📷 Kamera Aktif.' : '📷 Kamera Mati.',
+                  isCameraActive ? Colors.green : Colors.red,
                 ),
               ),
             ],
           ),
+          // Persentase Baterai
           GestureDetector(
             onTap: () => provider.showPopupSnackBar(
-              context, '🔋 Baterai perangkat terisi penuh ($battery%)', Colors.green,
+              context, '🔋 Baterai Rompi: $battery%', Colors.green,
             ),
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 0, 255, 42),
+                color: isMqttConnected ? const Color.fromARGB(255, 0, 255, 42) : Colors.grey[400],
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Text(
@@ -87,6 +122,7 @@ class InfoPanel extends StatelessWidget {
               ),
             ),
           ),
+          // Tombol Hubungkan Ulang (Refresh)
           GestureDetector(
             onTap: () => provider.refreshStatus(context),
             child: Container(
@@ -104,16 +140,20 @@ class InfoPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildSmallGreenIcon(IconData icon, {required VoidCallback onTap}) {
+  Widget _buildStatusIcon(IconData icon, {required bool isActive, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 0, 255, 42),
+          color: isActive ? const Color.fromARGB(255, 0, 255, 42) : Colors.grey[300],
           borderRadius: BorderRadius.circular(25),
         ),
-        child: Icon(icon, color: Colors.black, size: 50),
+        child: Icon(
+          icon,
+          color: isActive ? Colors.black : Colors.grey[700],
+          size: 50,
+        ),
       ),
     );
   }
