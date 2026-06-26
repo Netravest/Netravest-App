@@ -75,6 +75,7 @@ class InfoPanel extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -100,6 +101,7 @@ class InfoPanel extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 5),
           // Persentase Baterai
           GestureDetector(
             onTap: () => provider.showPopupSnackBar(
@@ -122,6 +124,7 @@ class InfoPanel extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 5),
           // Tombol Hubungkan Ulang (Refresh)
           GestureDetector(
             onTap: () => provider.refreshStatus(context),

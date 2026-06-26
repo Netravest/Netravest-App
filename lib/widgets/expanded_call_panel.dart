@@ -49,12 +49,18 @@ class ExpandedCallPanel extends StatelessWidget {
                 children: [
                   // Tombol Tambah Kontak
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.person_add_alt_1_rounded,
-                      color: Colors.black,
+                      color: contacts.length < 5 ? Colors.black : Colors.black38,
                       size: 28,
                     ),
-                    onPressed: onAddContact,
+                    onPressed: contacts.length < 5
+                        ? onAddContact
+                        : () => provider.showPopupSnackBar(
+                              context,
+                              '⚠️ Maksimal hanya 3 kontak tambahan terdekat!',
+                              Colors.orange,
+                            ),
                   ),
                   // Tombol Tutup (Collapse)
                   IconButton(
@@ -76,6 +82,7 @@ class ExpandedCallPanel extends StatelessWidget {
           // Daftar Kontak
           Expanded(
             child: ListView.builder(
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: contacts.length,
               itemBuilder: (context, index) {
                 final contact = contacts[index];

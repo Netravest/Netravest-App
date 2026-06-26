@@ -7,6 +7,8 @@ Netravest is a Flutter-based companion application developed as a research proto
 ## Core Features
 
 - **Real-Time Vest Telemetry**: Live indicators for battery levels (UPS Hat), sensor connectivity (LiDAR), and camera status over MQTT protocol.
+- **Device Pairing & Connection Page**: Custom premium layout featuring rounded cards, input fields, tap-scaling button animations, fast shortcut buttons, and isolated telemetry topic routing (`netravest/{deviceCode}/status` and `netravest/{deviceCode}/command`).
+- **Inline Device Status & Logout Panel**: Manage pairing status or unpair directly from the dashboard using an inline expanded panel that adapts to grid layouts.
 - **Vest Online/Offline Indicator**: Visual status badge showing whether the companion application is actively connected to the vest broker.
 - **Automated Reverse Geocoding**: Automatically translates raw GPS coordinates received from the vest (Ublox Neo M8N) into human-readable street addresses using the free OpenStreetMap Nominatim API.
 - **Instant SOS & Geolocation Broadcast**: Single-tap SOS button that instantly opens WhatsApp to broadcast emergency messages with a Google Maps link of the current GPS coordinate.
@@ -24,6 +26,7 @@ The codebase is structured using a service-provider modular pattern:
 lib/
 ├── main.dart                      # App entry point & Provider initialization
 ├── pages/
+│   ├── device_login_page.dart     # Custom pairing page for device connection
 │   └── homepage_emergency.dart    # Main dashboard grid layout
 ├── providers/
 │   └── emergency_provider.dart    # State manager (holds UI state, delegates logic to services)
@@ -33,6 +36,8 @@ lib/
 └── widgets/
     ├── address_bar.dart           # GPS Address bar display & location sharing trigger
     ├── expanded_call_panel.dart   # Extracted speed dial list & contact manager
+    ├── expanded_device_logout_panel.dart # Inline device unpair & status panel
+    ├── expanded_settings_panel.dart # Expandable settings options panel
     ├── info_panel.dart            # Battery progress, LiDAR, Camera & connection indicators
     ├── settings_button.dart       # General styled dashboard buttons
     └── sos_button.dart            # Big SOS trigger widget

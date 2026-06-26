@@ -6,6 +6,8 @@ import '../widgets/sos_button.dart';
 import '../widgets/address_bar.dart';
 import '../widgets/info_panel.dart';
 import '../widgets/expanded_call_panel.dart';
+import '../widgets/expanded_settings_panel.dart';
+import '../widgets/expanded_device_logout_panel.dart';
 
 class BerandaEmergency extends StatelessWidget {
   const BerandaEmergency({super.key});
@@ -82,6 +84,15 @@ class BerandaEmergency extends StatelessWidget {
                 final name = nameController.text.trim();
                 final phone = phoneController.text.trim();
                 if (name.isNotEmpty && phone.isNotEmpty) {
+                  if (!provider.canAddContact) {
+                    Navigator.pop(context);
+                    provider.showPopupSnackBar(
+                      context,
+                      '⚠️ Maksimal hanya 3 kontak tambahan terdekat!',
+                      Colors.orange,
+                    );
+                    return;
+                  }
                   provider.addContact(name, phone);
                   Navigator.pop(context);
                   provider.showPopupSnackBar(
@@ -114,8 +125,94 @@ class BerandaEmergency extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<EmergencyProvider>();
-    final isExpanded = context.select(
+    final isCallExpanded = context.select(
       (EmergencyProvider p) => p.isCallExpanded,
+    );
+    final isSettingsExpanded = context.select(
+      (EmergencyProvider p) => p.isSettingsExpanded,
+    );
+    final isDeviceExpanded = context.select(
+      (EmergencyProvider p) => p.isDeviceExpanded,
+    );
+    final isLeftHanded = context.select(
+      (EmergencyProvider p) => p.isLeftHanded,
+    );
+
+    final leftColumn = Expanded(
+      child: isSettingsExpanded
+          ? const ExpandedSettingsPanel()
+          : (isDeviceExpanded
+              ? const ExpandedDeviceLogoutPanel()
+              : Column(
+                  children: [
+                    const Expanded(flex: 4, child: InfoPanel()),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      flex: 2,
+                      child: SettingsButton(
+                        color: Colors.white,
+                        textColor: Colors.black,
+                        iconColor: Colors.black,
+                        icon: Icons.shape_line_rounded,
+                        label: 'Perangkat',
+                        onTap: () => provider.manageDevice(context),
+                      ),
+                    ),
+                  ],
+                )),
+    );
+
+    final hideRightColumn = isSettingsExpanded || isDeviceExpanded;
+
+    final rightColumn = Expanded(
+      child: Column(
+        children: [
+          if (!isCallExpanded) ...[
+            Expanded(
+              child: SettingsButton(
+                color: const Color.fromARGB(255, 255, 74, 0),
+                textColor: Colors.black,
+                iconColor: Colors.black,
+                icon: Icons.space_dashboard_rounded,
+                label: 'Mengambang',
+                onTap: () => provider.toggleFloatingWidget(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SettingsButton(
+                color: Colors.white,
+                textColor: Colors.black,
+                iconColor: Colors.black,
+                icon: Icons.settings_rounded,
+                label: 'Pengaturan',
+                onTap: () => provider.toggleSettingsExpansion(),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          // Tombol Telepon (Membesar jika isCallExpanded = true)
+          Expanded(
+            child: isCallExpanded
+                ? ExpandedCallPanel(
+                    onAddContact: () => _showAddContactDialog(context),
+                  )
+                : SettingsButton(
+                    color: const Color.fromARGB(
+                      255,
+                      255,
+                      74,
+                      0,
+                    ),
+                    textColor: Colors.black,
+                    iconColor: Colors.black,
+                    icon: Icons.phone_rounded,
+                    label: 'Telepon',
+                    onTap: () => provider.toggleCallExpansion(),
+                  ),
+          ),
+        ],
+      ),
     );
 
     return Scaffold(
@@ -138,81 +235,15 @@ class BerandaEmergency extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    // Kolom Kiri - Hanya ditampilkan jika tombol telepon TIDAK membesar
-                    if (!isExpanded) ...[
-                      Expanded(
-                        child: Column(
-                          children: [
-                            const Expanded(flex: 4, child: InfoPanel()),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              flex: 2,
-                              child: SettingsButton(
-                                color: Colors.white,
-                                textColor: Colors.black,
-                                iconColor: Colors.black,
-                                icon: Icons.settings_rounded,
-                                label: 'Pengaturan',
-                                onTap: () => provider.openSettings(context),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
+                    if (isLeftHanded) ...[
+                      if (!hideRightColumn) rightColumn,
+                      if (!hideRightColumn && !isCallExpanded) const SizedBox(width: 16),
+                      if (!isCallExpanded) leftColumn,
+                    ] else ...[
+                      if (!isCallExpanded) leftColumn,
+                      if (!hideRightColumn && !isCallExpanded) const SizedBox(width: 16),
+                      if (!hideRightColumn) rightColumn,
                     ],
-                    // Kolom Kanan
-                    Expanded(
-                      child: Column(
-                        children: [
-                          if (!isExpanded) ...[
-                            Expanded(
-                              child: SettingsButton(
-                                color: const Color.fromARGB(255, 255, 74, 0),
-                                textColor: Colors.black,
-                                iconColor: Colors.black,
-                                icon: Icons.space_dashboard_rounded,
-                                label: 'Mengambang',
-                                onTap: () =>
-                                    provider.toggleFloatingWidget(context),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: SettingsButton(
-                                color: Colors.white,
-                                textColor: Colors.black,
-                                iconColor: Colors.black,
-                                icon: Icons.shape_line_rounded,
-                                label: 'Perangkat',
-                                onTap: () => provider.manageDevice(context),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          // Tombol Telepon (Membesar jika isExpanded = true)
-                          Expanded(
-                            child: isExpanded
-                                ? ExpandedCallPanel(
-                                    onAddContact: () => _showAddContactDialog(context),
-                                  )
-                                : SettingsButton(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      255,
-                                      74,
-                                      0,
-                                    ),
-                                    textColor: Colors.black,
-                                    iconColor: Colors.black,
-                                    icon: Icons.phone_rounded,
-                                    label: 'Telepon',
-                                    onTap: () => provider.toggleCallExpansion(),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),

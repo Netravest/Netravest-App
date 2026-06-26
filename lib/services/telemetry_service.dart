@@ -8,6 +8,7 @@ class TelemetryService {
   final ValueChanged<Map<String, dynamic>> onTelemetryReceived;
   final VoidCallback onConnected;
   final VoidCallback onDisconnected;
+  String _currentDeviceCode = '';
 
   TelemetryService({
     required this.onTelemetryReceived,
@@ -15,10 +16,11 @@ class TelemetryService {
     required this.onDisconnected,
   });
 
-  void connect() async {
+  void connect({String host = 'broker.hivemq.com', int port = 1883, String deviceCode = ''}) async {
+    _currentDeviceCode = deviceCode;
     final clientUniqueId = 'netravest_client_${DateTime.now().millisecondsSinceEpoch % 100000}';
-    _client = MqttServerClient('broker.hivemq.com', clientUniqueId);
-    _client!.port = 1883;
+    _client = MqttServerClient(host, clientUniqueId);
+    _client!.port = port;
     _client!.keepAlivePeriod = 60;
     _client!.onDisconnected = onDisconnected;
     _client!.onConnected = _onConnectedCallback;
@@ -40,9 +42,10 @@ class TelemetryService {
   }
 
   void _onConnectedCallback() {
-    print('TelemetryService: Terhubung ke broker');
+    print('TelemetryService: Terhubung ke broker dengan kode $_currentDeviceCode');
     onConnected();
-    _client!.subscribe('netravest/status', MqttQos.atMostOnce);
+    final topic = _currentDeviceCode.isNotEmpty ? 'netravest/$_currentDeviceCode/status' : 'netravest/status';
+    _client!.subscribe(topic, MqttQos.atMostOnce);
     
     _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
       final recMess = c![0].payload as MqttPublishMessage;
@@ -55,6 +58,17 @@ class TelemetryService {
         print('TelemetryService Parse Error: $e');
       }
     });
+  }
+
+  void publishCommand(Map<String, dynamic> command) {
+    if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(jsonEncode(command));
+      final topic = _currentDeviceCode.isNotEmpty ? 'netravest/$_currentDeviceCode/command' : 'netravest/command';
+      _client!.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+    } else {
+      print('TelemetryService: Gagal mengirim perintah - klien tidak terhubung.');
+    }
   }
 
   void disconnect() {
