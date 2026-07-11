@@ -29,6 +29,7 @@ class EmergencyProvider with ChangeNotifier {
   // Kode Pairing Perangkat
   String _deviceCode = '';
   bool _isConnectingDevice = false;
+  String _userRole = 'tunanetra'; // 'tunanetra' atau 'pendamping'
 
   // Daftar kontak awal
   bool _isCallExpanded = false;
@@ -92,6 +93,12 @@ class EmergencyProvider with ChangeNotifier {
   bool get canAddContact => _contacts.length < 5;
   String get deviceCode => _deviceCode;
   bool get isConnectingDevice => _isConnectingDevice;
+  String get userRole => _userRole;
+
+  void setUserRole(String role) {
+    _userRole = role;
+    notifyListeners();
+  }
 
   void toggleCallExpansion() {
     _isCallExpanded = !_isCallExpanded;
@@ -321,22 +328,7 @@ class EmergencyProvider with ChangeNotifier {
     String message,
     Color backgroundColor,
   ) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      ),
-    );
+    // Dinonaktifkan untuk menghilangkan seluruh notifikasi SnackBar di bawah
   }
 
   // Delegasi koneksi MQTT ke TelemetryService

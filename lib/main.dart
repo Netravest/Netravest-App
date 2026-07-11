@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/emergency_provider.dart';
 import 'pages/homepage_emergency.dart';
+import 'pages/homepage_companion.dart';
 import 'pages/device_login_page.dart';
 
 void main() {
@@ -25,6 +26,9 @@ class NetravestApp extends StatelessWidget {
         builder: (context, provider, child) {
           if (provider.deviceCode.isEmpty) {
             return const DeviceLoginPage();
+          }
+          if (provider.userRole == 'pendamping') {
+            return const BerandaPendamping();
           }
           return const BerandaEmergency();
         },

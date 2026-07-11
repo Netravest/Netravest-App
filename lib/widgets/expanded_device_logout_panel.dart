@@ -12,8 +12,8 @@ class ExpandedDeviceLogoutPanel extends StatelessWidget {
     final statusText = provider.isSimulationActive
         ? 'Simulasi Aktif'
         : (provider.isMqttConnected
-            ? 'Online (Terhubung)'
-            : 'Offline (Terputus)');
+              ? 'Online (Terhubung)'
+              : 'Offline (Terputus)');
 
     return Container(
       key: const ValueKey('device_logout_expanded'),
@@ -32,11 +32,7 @@ class ExpandedDeviceLogoutPanel extends StatelessWidget {
             children: [
               const Row(
                 children: [
-                  Icon(
-                    Icons.shape_line_rounded,
-                    color: Colors.black,
-                    size: 28,
-                  ),
+                  Icon(Icons.shape_line_rounded, color: Colors.black, size: 28),
                   SizedBox(width: 8),
                   Text(
                     'Perangkat',
@@ -77,20 +73,34 @@ class ExpandedDeviceLogoutPanel extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Icon(
-                  Icons.phonelink_ring_rounded,
-                  size: 50,
-                  color: statusColor,
-                ),
+
                 const SizedBox(height: 24),
 
                 // Info Perangkat
-                _buildInfoTile(Icons.qr_code_rounded, 'Kode Perangkat', provider.deviceCode, isBold: true),
-                _buildInfoTile(Icons.wifi_rounded, 'Status Koneksi', statusText, valueColor: statusColor, isBold: true),
-                _buildInfoTile(Icons.dns_rounded, 'Server MQTT', provider.mqttHost),
-                _buildInfoTile(Icons.settings_input_component_rounded, 'Port Broker', provider.mqttPort.toString()),
-                
+                _buildInfoTile(
+                  Icons.qr_code_rounded,
+                  'Kode Perangkat',
+                  provider.deviceCode,
+                  isBold: true,
+                ),
+                _buildInfoTile(
+                  Icons.wifi_rounded,
+                  'Status Koneksi',
+                  statusText,
+                  valueColor: statusColor,
+                  isBold: true,
+                ),
+                _buildInfoTile(
+                  Icons.dns_rounded,
+                  'Server MQTT',
+                  provider.mqttHost,
+                ),
+                _buildInfoTile(
+                  Icons.settings_input_component_rounded,
+                  'Port Broker',
+                  provider.mqttPort.toString(),
+                ),
+
                 const SizedBox(height: 28),
 
                 // Tombol Putuskan Koneksi
@@ -118,16 +128,6 @@ class ExpandedDeviceLogoutPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Logo Netravest
-                Center(
-                  child: Image.asset(
-                    'assets/images/icon_oren.png',
-                    height: 35,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: 10),
               ],
             ),
           ),

@@ -13,6 +13,7 @@ class _DeviceLoginPageState extends State<DeviceLoginPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String _selectedRole = 'tunanetra';
   String _statusMessage = 'Siap menghubungkan';
 
   // Animasi tekan tombol
@@ -55,6 +56,7 @@ class _DeviceLoginPageState extends State<DeviceLoginPage>
           : 'Menghubungkan ke broker ${provider.mqttHost}...';
     });
 
+    provider.setUserRole(_selectedRole);
     final success = await provider.connectDevice(code, simulate: simulate);
 
     if (!mounted) return;
@@ -197,7 +199,79 @@ class _DeviceLoginPageState extends State<DeviceLoginPage>
               ),
             ],
           ),
-          const SizedBox(height: 50),
+          const SizedBox(height: 24),
+
+          // Role Selector Tabs
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(35),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedRole = 'tunanetra';
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedRole == 'tunanetra'
+                            ? const Color.fromARGB(255, 255, 74, 0)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Text(
+                        'Tunanetra',
+                        style: TextStyle(
+                          color: _selectedRole == 'tunanetra'
+                              ? Colors.white
+                              : Colors.black54,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedRole = 'pendamping';
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _selectedRole == 'pendamping'
+                            ? const Color.fromARGB(255, 255, 74, 0)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Text(
+                        'Pendamping',
+                        style: TextStyle(
+                          color: _selectedRole == 'pendamping'
+                              ? Colors.white
+                              : Colors.black54,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
 
           // 2. Teks "Masukkan kode Anda"
           const Text(

@@ -22,7 +22,8 @@ class SettingsButton extends StatefulWidget {
   State<SettingsButton> createState() => _SettingsButtonState();
 }
 
-class _SettingsButtonState extends State<SettingsButton> with SingleTickerProviderStateMixin {
+class _SettingsButtonState extends State<SettingsButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 

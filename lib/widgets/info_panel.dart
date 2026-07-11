@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/emergency_provider.dart';
+import 'animated_pressable.dart';
+
 
 class InfoPanel extends StatelessWidget {
   const InfoPanel({super.key});
@@ -126,7 +128,7 @@ class InfoPanel extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           // Tombol Hubungkan Ulang (Refresh)
-          GestureDetector(
+          AnimatedPressable(
             onTap: () => provider.refreshStatus(context),
             child: Container(
               width: double.infinity,
@@ -144,7 +146,7 @@ class InfoPanel extends StatelessWidget {
   }
 
   Widget _buildStatusIcon(IconData icon, {required bool isActive, required VoidCallback onTap}) {
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(10),
