@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "477890680323",
+    "project_id": "netravest-326c7",
+    "storage_bucket": "netravest-326c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:477890680323:android:2b5581c0357a846830a036",
+        "android_client_info": {
+          "package_name": "com.example.netravest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "477890680323-6e0dcdoium5b23t8h2osn82fl0h4e5cm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOzNs1Tos9GVr7nkKza26KPu52UA9_MMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "477890680323-6e0dcdoium5b23t8h2osn82fl0h4e5cm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
