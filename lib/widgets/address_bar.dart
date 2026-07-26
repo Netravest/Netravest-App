@@ -30,6 +30,8 @@ class AddressBar extends StatelessWidget {
                 ),
                 child: Text(
                   address,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,

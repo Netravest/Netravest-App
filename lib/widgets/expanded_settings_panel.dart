@@ -1,110 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../providers/emergency_provider.dart';
 
 class ExpandedSettingsPanel extends StatelessWidget {
   const ExpandedSettingsPanel({super.key});
 
-  void _showMqttDialog(BuildContext context, EmergencyProvider provider) {
-    final hostController = TextEditingController(text: provider.mqttHost);
-    final portController = TextEditingController(text: provider.mqttPort.toString());
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          title: const Text(
-            'Konfigurasi MQTT Broker',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: hostController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Host Broker',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.white30),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.deepOrange),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: portController,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Port Broker',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.white30),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.deepOrange),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 255, 74, 0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              onPressed: () {
-                final host = hostController.text.trim();
-                final portStr = portController.text.trim();
-                final port = int.tryParse(portStr);
-                if (host.isNotEmpty && port != null) {
-                  provider.updateMqttConfig(host, port);
-                  Navigator.pop(context);
-                  provider.showPopupSnackBar(
-                    context,
-                    '⚙️ Broker diperbarui: $host:$port',
-                    Colors.green,
-                  );
-                } else {
-                  provider.showPopupSnackBar(
-                    context,
-                    '⚠️ Host atau Port tidak valid!',
-                    Colors.red,
-                  );
-                }
-              },
-              child: const Text(
-                'Simpan',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,18 +135,14 @@ class ExpandedSettingsPanel extends StatelessWidget {
                   ),
                 ),
 
-                // 3. Konfigurasi Broker MQTT
+                // 3. Database Telemetri
                 _buildSettingTile(
-                  icon: Icons.dns_rounded,
-                  title: 'Broker MQTT',
-                  subtitle: '${provider.mqttHost}:${provider.mqttPort}',
-                  trailing: CircleAvatar(
-                    backgroundColor: Colors.black,
-                    radius: 20,
-                    child: IconButton(
-                      icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
-                      onPressed: () => _showMqttDialog(context, provider),
-                    ),
+                  icon: Icons.cloud_done_rounded,
+                  title: 'Database Telemetri',
+                  subtitle: 'Google Cloud Firestore',
+                  trailing: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Colors.green,
                   ),
                 ),
 
@@ -262,7 +161,7 @@ class ExpandedSettingsPanel extends StatelessWidget {
                         context,
                         value
                             ? '⚡ Mode Simulasi Telemetri Aktif!'
-                            : '🔌 Menghubungkan ke Broker MQTT...',
+                            : '🔌 Sinkronisasi Cloud Firestore Aktif...',
                         value ? Colors.orange : Colors.blue,
                       );
                     },
@@ -316,6 +215,45 @@ class ExpandedSettingsPanel extends StatelessWidget {
                         SizedBox(width: 8),
                         Text(
                           'Kembalikan Default',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 6. Keluar Akun (Sign Out)
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: const Color.fromARGB(255, 255, 0, 0),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () async {
+                      // Tutup panel pengaturan
+                      provider.toggleSettingsExpansion();
+                      
+                      // Putuskan koneksi perangkat
+                      provider.disconnectDevice();
+                      
+                      // Sign out Firebase & Google Sign In
+                      await FirebaseAuth.instance.signOut();
+                      await GoogleSignIn.instance.signOut();
+                    },
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout_rounded, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Keluar Akun',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],

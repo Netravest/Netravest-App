@@ -92,12 +92,12 @@ class ExpandedDeviceLogoutPanel extends StatelessWidget {
                 ),
                 _buildInfoTile(
                   Icons.dns_rounded,
-                  'Server MQTT',
+                  'Database Telemetri',
                   provider.mqttHost,
                 ),
                 _buildInfoTile(
                   Icons.settings_input_component_rounded,
-                  'Port Broker',
+                  'Tipe Layanan',
                   provider.mqttPort.toString(),
                 ),
 

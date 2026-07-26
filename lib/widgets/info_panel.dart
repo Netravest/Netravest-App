@@ -112,7 +112,13 @@ class InfoPanel extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: isMqttConnected ? const Color.fromARGB(255, 0, 255, 42) : Colors.grey[400],
+                color: !isMqttConnected
+                    ? Colors.grey[400]
+                    : (battery <= 20
+                        ? const Color.fromARGB(255, 255, 59, 48) // Merah jika <= 20
+                        : (battery <= 50
+                            ? const Color.fromARGB(255, 255, 204, 0) // Kuning jika <= 50
+                            : const Color.fromARGB(255, 0, 255, 42))), // Hijau jika > 50
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Text(

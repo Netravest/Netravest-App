@@ -1,10 +1,9 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:mqtt_client/mqtt_client.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelemetryService {
-  MqttServerClient? _client;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _subscription;
   final ValueChanged<Map<String, dynamic>> onTelemetryReceived;
   final VoidCallback onConnected;
   final VoidCallback onDisconnected;
@@ -16,63 +15,67 @@ class TelemetryService {
     required this.onDisconnected,
   });
 
-  void connect({String host = 'broker.hivemq.com', int port = 1883, String deviceCode = ''}) async {
+  void connect({String host = '', int port = 0, String deviceCode = ''}) {
     _currentDeviceCode = deviceCode;
-    final clientUniqueId = 'netravest_client_${DateTime.now().millisecondsSinceEpoch % 100000}';
-    _client = MqttServerClient(host, clientUniqueId);
-    _client!.port = port;
-    _client!.keepAlivePeriod = 60;
-    _client!.onDisconnected = onDisconnected;
-    _client!.onConnected = _onConnectedCallback;
-    _client!.logging(on: false);
-
-    final connMess = MqttConnectMessage()
-        .withClientIdentifier(clientUniqueId)
-        .startClean()
-        .withWillQos(MqttQos.atMostOnce);
-    _client!.connectionMessage = connMess;
-
-    try {
-      print('TelemetryService: Menghubungkan ke broker...');
-      await _client!.connect();
-    } catch (e) {
-      print('TelemetryService Connection Error: $e');
+    if (_currentDeviceCode.isEmpty) {
       onDisconnected();
+      return;
     }
-  }
 
-  void _onConnectedCallback() {
-    print('TelemetryService: Terhubung ke broker dengan kode $_currentDeviceCode');
-    onConnected();
-    final topic = _currentDeviceCode.isNotEmpty ? 'netravest/$_currentDeviceCode/status' : 'netravest/status';
-    _client!.subscribe(topic, MqttQos.atMostOnce);
-    
-    _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      final recMess = c![0].payload as MqttPublishMessage;
-      final payloadStr = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+    // Batalkan langganan sebelumnya jika ada
+    _subscription?.cancel();
 
-      try {
-        final data = jsonDecode(payloadStr);
-        onTelemetryReceived(data);
-      } catch (e) {
-        print('TelemetryService Parse Error: $e');
-      }
-    });
+    // Dengarkan dokumen di Firestore secara real-time
+    _subscription = FirebaseFirestore.instance
+        .collection('telemetri_rompi')
+        .doc(_currentDeviceCode)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        if (snapshot.exists && snapshot.data() != null) {
+          onConnected();
+          onTelemetryReceived(snapshot.data()!);
+        } else {
+          // Anggap terhubung (menunggu data pertama dibuat oleh hardware)
+          onConnected();
+        }
+      },
+      onError: (error) {
+        onDisconnected();
+      },
+    );
   }
 
   void publishCommand(Map<String, dynamic> command) {
-    if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
-      final builder = MqttClientPayloadBuilder();
-      builder.addString(jsonEncode(command));
-      final topic = _currentDeviceCode.isNotEmpty ? 'netravest/$_currentDeviceCode/command' : 'netravest/command';
-      _client!.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
-    } else {
-      print('TelemetryService: Gagal mengirim perintah - klien tidak terhubung.');
+    if (_currentDeviceCode.isEmpty) {
+      return;
     }
+
+    FirebaseFirestore.instance
+        .collection('telemetri_rompi')
+        .doc(_currentDeviceCode)
+        .set({
+          'command': command,
+          'command_timestamp': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  void publishSosStatus(bool active) {
+    if (_currentDeviceCode.isEmpty) {
+      return;
+    }
+
+    FirebaseFirestore.instance
+        .collection('telemetri_rompi')
+        .doc(_currentDeviceCode)
+        .set({
+          'sos_active': active,
+        }, SetOptions(merge: true));
   }
 
   void disconnect() {
-    _client?.disconnect();
+    _subscription?.cancel();
+    _subscription = null;
     onDisconnected();
   }
 }

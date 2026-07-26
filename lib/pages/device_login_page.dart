@@ -53,7 +53,7 @@ class _DeviceLoginPageState extends State<DeviceLoginPage>
     setState(() {
       _statusMessage = simulate
           ? 'Menginisialisasi simulator...'
-          : 'Menghubungkan ke broker ${provider.mqttHost}...';
+          : 'Menghubungkan ke Firebase...';
     });
 
     provider.setUserRole(_selectedRole);

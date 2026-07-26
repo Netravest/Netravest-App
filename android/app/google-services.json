@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "477890680323-8vhldnep603jepilrdgla296jldt9plv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.netravest",
+            "certificate_hash": "cc975116573ab67ca006d4f80d3f8f4618a695dd"
+          }
+        },
+        {
           "client_id": "477890680323-6e0dcdoium5b23t8h2osn82fl0h4e5cm.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "477890680323-6e0dcdoium5b23t8h2osn82fl0h4e5cm.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "477890680323-f4einoqfem8dsb2se7r74aqedvkq4bjf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.netravest"
+              }
             }
           ]
         }

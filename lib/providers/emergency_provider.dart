@@ -6,6 +6,8 @@ import '../services/geocoding_service.dart';
 import '../services/telemetry_service.dart';
 import '../pages/sos_activation_page.dart';
 import '../pages/device_login_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EmergencyProvider with ChangeNotifier {
   // Data telemetri dinamis
@@ -37,8 +39,8 @@ class EmergencyProvider with ChangeNotifier {
   bool _isDeviceExpanded = false;
   int _sosTapThreshold = 5;
   int _recordingDuration = 30;
-  String _mqttHost = 'broker.hivemq.com';
-  int _mqttPort = 1883;
+  String _mqttHost = 'Google Cloud Firestore';
+  int _mqttPort = 443;
   bool _isSimulationActive = false;
   Timer? _simulationTimer;
   bool _isLeftHanded = false;
@@ -50,7 +52,9 @@ class EmergencyProvider with ChangeNotifier {
 
   final bool _enableMqtt;
 
-  EmergencyProvider({this._enableMqtt = true}) {
+  // ignore: prefer_initializing_formals
+  EmergencyProvider({bool enableMqtt = true}) : _enableMqtt = enableMqtt {
+    _startLocalClock();
     // Inisialisasi Telemetry Service
     _telemetryService = TelemetryService(
       onTelemetryReceived: _updateTelemetry,
@@ -65,9 +69,9 @@ class EmergencyProvider with ChangeNotifier {
         notifyListeners();
       },
     );
-    // Memulai koneksi MQTT jika deviceCode sudah ada (belum ada pada start)
+    // Memulai koneksi telemetri jika deviceCode sudah ada (belum ada pada start)
     if (_enableMqtt && _deviceCode.isNotEmpty) {
-      connectToMQTT();
+      connectToTelemetry();
     }
   }
 
@@ -148,22 +152,22 @@ class EmergencyProvider with ChangeNotifier {
     notifyListeners();
     // Reconnect with new configuration if simulation is not active
     if (!_isSimulationActive) {
-      disconnectMQTT();
-      connectToMQTT();
+      disconnectTelemetry();
+      connectToTelemetry();
     }
   }
 
   void resetSettings() {
     _sosTapThreshold = 5;
     _recordingDuration = 30;
-    _mqttHost = 'broker.hivemq.com';
-    _mqttPort = 1883;
+    _mqttHost = 'Google Cloud Firestore';
+    _mqttPort = 443;
     _isLeftHanded = false;
     if (_isSimulationActive) {
       toggleSimulation(false);
     } else {
-      disconnectMQTT();
-      connectToMQTT();
+      disconnectTelemetry();
+      connectToTelemetry();
     }
     notifyListeners();
   }
@@ -172,8 +176,8 @@ class EmergencyProvider with ChangeNotifier {
     if (_isSimulationActive == value) return;
     _isSimulationActive = value;
     if (_isSimulationActive) {
-      // Disconnect MQTT if connected
-      disconnectMQTT();
+      // Disconnect Telemetry if connected
+      disconnectTelemetry();
       _isMqttConnected = true; // Show simulated connection status
 
       // Start Simulation Timer
@@ -218,8 +222,8 @@ class EmergencyProvider with ChangeNotifier {
       _simulationTimer?.cancel();
       _simulationTimer = null;
       _isMqttConnected = false;
-      // Reconnect MQTT
-      connectToMQTT();
+      // Reconnect Telemetry
+      connectToTelemetry();
     }
     notifyListeners();
   }
@@ -269,6 +273,9 @@ class EmergencyProvider with ChangeNotifier {
       'action': 'start_recording',
       'duration': _recordingDuration,
     });
+
+    // Kirim status SOS aktif ke Firestore agar pendamping mengetahuinya secara real-time
+    _telemetryService.publishSosStatus(true);
 
     // 2. Hubungi dan kirim lokasi ke rekan terdekat sekaligus via WhatsApp
     if (_contacts.isNotEmpty) {
@@ -320,6 +327,8 @@ class EmergencyProvider with ChangeNotifier {
   void cancelSos(BuildContext context) {
     _isSosActive = false;
     notifyListeners();
+    // Kirim status SOS mati ke Firestore agar pendamping mengetahuinya secara real-time
+    _telemetryService.publishSosStatus(false);
     Navigator.pop(context); // Menutup halaman SOS Full Screen
   }
 
@@ -331,8 +340,8 @@ class EmergencyProvider with ChangeNotifier {
     // Dinonaktifkan untuk menghilangkan seluruh notifikasi SnackBar di bawah
   }
 
-  // Delegasi koneksi MQTT ke TelemetryService
-  void connectToMQTT() {
+  // Delegasi koneksi telemetri ke TelemetryService
+  void connectToTelemetry() {
     if (!_enableMqtt || _isSimulationActive) return;
     _telemetryService.connect(
       host: _mqttHost,
@@ -341,7 +350,7 @@ class EmergencyProvider with ChangeNotifier {
     );
   }
 
-  void disconnectMQTT() {
+  void disconnectTelemetry() {
     if (!_enableMqtt) return;
     _telemetryService.disconnect();
   }
@@ -354,6 +363,7 @@ class EmergencyProvider with ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     _deviceCode = code.trim().toUpperCase();
+    _resetTelemetryData();
     _isConnectingDevice = false;
 
     if (simulate) {
@@ -364,8 +374,17 @@ class EmergencyProvider with ChangeNotifier {
       return true;
     }
 
+    // Lakukan login anonim jika pengguna belum terautentikasi (agar bisa lolos aturan keamanan Firestore)
+    if (FirebaseAuth.instance.currentUser == null) {
+      try {
+        await FirebaseAuth.instance.signInAnonymously();
+      } catch (_) {
+        // Gagal login anonim, lanjutkan tanpa auth kustom
+      }
+    }
+
     _isSimulationActive = false;
-    connectToMQTT();
+    connectToTelemetry();
     notifyListeners();
     return true;
   }
@@ -374,45 +393,78 @@ class EmergencyProvider with ChangeNotifier {
     _deviceCode = '';
     _isMqttConnected = false;
     _isDeviceExpanded = false;
+    _resetTelemetryData();
     if (_isSimulationActive) {
       toggleSimulation(false);
     } else {
-      disconnectMQTT();
+      disconnectTelemetry();
     }
+    notifyListeners();
+  }
+
+  void _resetTelemetryData() {
+    _address = "Mencari lokasi GPS...";
+    _currentTime = '--:--';
+    _currentDate = '--/--/----';
+    _batteryLevel = 0;
+    _sensorActive = false;
+    _cameraActive = false;
+    _latitude = 0.0;
+    _longitude = 0.0;
+    _isSosActive = false;
+  }
+
+  void _startLocalClock() {
+    _updateLocalClock();
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateLocalClock();
+    });
+  }
+
+  void _updateLocalClock() {
+    final now = DateTime.now();
+    _currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+    _currentDate = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
     notifyListeners();
   }
 
   void _updateTelemetry(Map<String, dynamic> data) {
     if (_isSimulationActive) return;
-    if (data.containsKey('battery')) {
-      _batteryLevel = data['battery'] as int;
-    }
-    if (data.containsKey('sensor_active')) {
-      _sensorActive = data['sensor_active'] as bool;
-    }
-    if (data.containsKey('camera_active')) {
-      _cameraActive = data['camera_active'] as bool;
-    }
-    if (data.containsKey('timestamp')) {
-      _currentTime = data['timestamp'] as String;
-    }
 
-    final now = DateTime.now();
-    _currentDate =
-        '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+    if (data.containsKey('PersentaseBaterai')) {
+      _batteryLevel = (data['PersentaseBaterai'] as num).toInt();
+    }
+    if (data.containsKey('StatusLidar')) {
+      _sensorActive = data['StatusLidar'] as bool;
+    }
+    if (data.containsKey('StatusKamera')) {
+      _cameraActive = data['StatusKamera'] as bool;
+    }
+    if (data.containsKey('sos_active')) {
+      _isSosActive = data['sos_active'] as bool;
+    }
+    if (data.containsKey('AlamatLokasi') && (data['AlamatLokasi'] as String).isNotEmpty) {
+      _address = data['AlamatLokasi'] as String;
+    }
 
     // Update GPS & Alamat
-    if (data.containsKey('latitude') && data.containsKey('longitude')) {
-      final newLat = (data['latitude'] as num).toDouble();
-      final newLng = (data['longitude'] as num).toDouble();
+    if (data.containsKey('LongLatLokasi')) {
+      final geoVal = data['LongLatLokasi'];
+      if (geoVal is GeoPoint) {
+        final newLat = geoVal.latitude;
+        final newLng = geoVal.longitude;
 
-      // Update alamat jika koordinat bergeser signifikan
-      if ((newLat - _latitude).abs() > 0.0001 ||
-          (newLng - _longitude).abs() > 0.0001 ||
-          _address == "Mencari lokasi GPS...") {
-        _latitude = newLat;
-        _longitude = newLng;
-        _triggerGeocoding(newLat, newLng);
+        // Update alamat jika koordinat bergeser signifikan
+        if ((newLat - _latitude).abs() > 0.0001 ||
+            (newLng - _longitude).abs() > 0.0001 ||
+            _address == "Mencari lokasi GPS...") {
+          _latitude = newLat;
+          _longitude = newLng;
+          
+          if (!data.containsKey('AlamatLokasi') || (data['AlamatLokasi'] as String).isEmpty) {
+            _triggerGeocoding(newLat, newLng);
+          }
+        }
       }
     }
     notifyListeners();
@@ -489,14 +541,32 @@ class EmergencyProvider with ChangeNotifier {
     _launchURL(context, waUrl);
   }
 
-  void refreshStatus(BuildContext context) {
+  void refreshStatus(BuildContext context) async {
     showPopupSnackBar(
       context,
-      '🔄 Menyambungkan ulang ke Rompi...',
+      '🔄 Mengambil data terbaru dari Firebase...',
       Colors.blue,
     );
-    disconnectMQTT();
-    connectToMQTT();
+    
+    // Sambungkan ulang listener secara real-time
+    disconnectTelemetry();
+    connectToTelemetry();
+
+    // Lakukan paksaan pengambilan data dari server cloud Firestore secara langsung
+    if (_deviceCode.isNotEmpty) {
+      try {
+        final docSnapshot = await FirebaseFirestore.instance
+            .collection('telemetri_rompi')
+            .doc(_deviceCode)
+            .get(const GetOptions(source: Source.server));
+            
+        if (docSnapshot.exists && docSnapshot.data() != null) {
+          _updateTelemetry(docSnapshot.data()!);
+        }
+      } catch (e) {
+        // Gagal mengambil data secara langsung (offline/masalah jaringan)
+      }
+    }
   }
 
   void openSettings(BuildContext context) {

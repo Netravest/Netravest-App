@@ -182,6 +182,8 @@ class BerandaPendamping extends StatelessWidget {
                         ),
                         child: Text(
                           provider.address,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -399,7 +401,7 @@ class _CompanionDevicePanel extends StatelessWidget {
             ),
           ),
 
-          // Kapsul Port Broker
+          // Kapsul Database Telemetri
           Container(
             width: double.infinity,
             height: 50,
@@ -412,7 +414,7 @@ class _CompanionDevicePanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Port:',
+                  'Database:',
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 14,
@@ -420,7 +422,7 @@ class _CompanionDevicePanel extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  provider.mqttPort.toString(),
+                  'Firestore',
                   style: const TextStyle(
                     color: Colors.black87,
                     fontSize: 14,
