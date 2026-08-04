@@ -8,6 +8,7 @@ import 'pages/homepage_emergency.dart';
 import 'pages/homepage_companion.dart';
 import 'pages/device_login_page.dart';
 import 'pages/user_login_page.dart';
+import 'widgets/pip_dashboard_view.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -51,6 +52,9 @@ class NetravestApp extends StatelessWidget {
 
           return Consumer<EmergencyProvider>(
             builder: (context, provider, child) {
+              if (provider.isInPipMode) {
+                return const PipDashboardView();
+              }
               if (provider.deviceCode.isEmpty) {
                 return const DeviceLoginPage();
               }

@@ -8,8 +8,23 @@ class SosActivationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<EmergencyProvider>();
+    final isSosActive = context.watch<EmergencyProvider>().isSosActive;
     final nearestContact = provider.contacts.isNotEmpty ? provider.contacts.last : null;
     final nearestContactName = nearestContact != null ? nearestContact['name'] : 'Rekan Terdekat';
+
+    // Jika status SOS dinonaktifkan (misalnya oleh pendamping via Firestore),
+    // tutup halaman ini secara otomatis!
+    if (!isSosActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pop();
+      });
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.red),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 0, 0),

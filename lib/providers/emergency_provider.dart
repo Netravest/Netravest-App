@@ -52,8 +52,22 @@ class EmergencyProvider with ChangeNotifier {
 
   final bool _enableMqtt;
 
+  static const _pipChannel = MethodChannel('com.example.netravest/pip');
+  bool _isInPipMode = false;
+  bool get isInPipMode => _isInPipMode;
+
+  void _initPipChannel() {
+    _pipChannel.setMethodCallHandler((call) async {
+      if (call.method == 'onPipModeChanged') {
+        _isInPipMode = call.arguments as bool;
+        notifyListeners();
+      }
+    });
+  }
+
   // ignore: prefer_initializing_formals
   EmergencyProvider({bool enableMqtt = true}) : _enableMqtt = enableMqtt {
+    _initPipChannel();
     _startLocalClock();
     // Inisialisasi Telemetry Service
     _telemetryService = TelemetryService(
@@ -77,6 +91,8 @@ class EmergencyProvider with ChangeNotifier {
 
   // Getter data ke UI
   String get address => _address;
+  double get latitude => _latitude;
+  double get longitude => _longitude;
   String get currentTime => _currentTime;
   String get currentDate => _currentDate;
   int get batteryLevel => _batteryLevel;
@@ -215,6 +231,22 @@ class EmergencyProvider with ChangeNotifier {
           _longitude += randomOffsetLng;
         }
 
+        // Kirim data simulasi ke Firestore agar pendamping bisa memantau secara real-time
+        if (_deviceCode.isNotEmpty) {
+          FirebaseFirestore.instance
+              .collection('telemetri_rompi')
+              .doc(_deviceCode)
+              .set({
+                'AlamatLokasi': _address,
+                'PersentaseBaterai': _batteryLevel,
+                'StatusKamera': _cameraActive,
+                'StatusLidar': _sensorActive,
+                'sos_active': _isSosActive,
+                'LongLatLokasi': GeoPoint(_latitude, _longitude),
+                'Timestamp': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+        }
+
         _triggerGeocoding(_latitude, _longitude);
         notifyListeners();
       });
@@ -329,7 +361,12 @@ class EmergencyProvider with ChangeNotifier {
     notifyListeners();
     // Kirim status SOS mati ke Firestore agar pendamping mengetahuinya secara real-time
     _telemetryService.publishSosStatus(false);
-    Navigator.pop(context); // Menutup halaman SOS Full Screen
+  }
+
+  void toggleSos() {
+    _isSosActive = !_isSosActive;
+    notifyListeners();
+    _telemetryService.publishSosStatus(_isSosActive);
   }
 
   void showPopupSnackBar(
@@ -369,6 +406,7 @@ class EmergencyProvider with ChangeNotifier {
     if (simulate) {
       _isSimulationActive = true;
       _isMqttConnected = true;
+      _telemetryService.connect(deviceCode: _deviceCode);
       toggleSimulation(true);
       notifyListeners();
       return true;
@@ -429,7 +467,18 @@ class EmergencyProvider with ChangeNotifier {
   }
 
   void _updateTelemetry(Map<String, dynamic> data) {
-    if (_isSimulationActive) return;
+    if (_isSimulationActive) {
+      // Jika simulasi aktif, kita tetap ingin mensinkronkan status SOS dari Firestore
+      // agar jika pendamping meresolusi/mematikan SOS, simulator ikut terupdate.
+      if (data.containsKey('sos_active')) {
+        final extSos = data['sos_active'] as bool;
+        if (_isSosActive != extSos) {
+          _isSosActive = extSos;
+          notifyListeners();
+        }
+      }
+      return;
+    }
 
     if (data.containsKey('PersentaseBaterai')) {
       _batteryLevel = (data['PersentaseBaterai'] as num).toInt();
@@ -519,6 +568,17 @@ class EmergencyProvider with ChangeNotifier {
     _launchURL(context, url);
   }
 
+  void openMapLocation(BuildContext context) {
+    if (_latitude == 0.0 && _longitude == 0.0) {
+      showPopupSnackBar(context, '📍 Lokasi GPS belum siap!', Colors.red);
+      return;
+    }
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$_latitude,$_longitude',
+    );
+    _launchURL(context, url);
+  }
+
   // Meluncurkan Telepon (WhatsApp atau Seluler)
   void makeCall(BuildContext context, {String? name, String? phone}) {
     if (phone == null) return;
@@ -573,8 +633,42 @@ class EmergencyProvider with ChangeNotifier {
     showPopupSnackBar(context, '⚙️ Pengaturan...', Colors.grey);
   }
 
-  void toggleFloatingWidget(BuildContext context) {
-    // Tombol kosong / Tidak terjadi apa-apa
+  void toggleFloatingWidget(BuildContext context) async {
+    try {
+      final bool isSupported = await _pipChannel.invokeMethod('isPipSupported') ?? false;
+      if (isSupported) {
+        await _pipChannel.invokeMethod('enterPip');
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Tidak Didukung', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+            content: const Text(
+              'Perangkat Anda tidak mendukung mode Picture-in-Picture secara bawaan.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Color.fromARGB(255, 255, 74, 0))),
+              ),
+            ],
+          ),
+        );
+      }
+    } on PlatformException catch (e) {
+      debugPrint('Error entering PiP mode: ${e.message}');
+    }
   }
 
   void manageDevice(BuildContext context) {

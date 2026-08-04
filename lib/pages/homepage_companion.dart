@@ -194,41 +194,91 @@ class BerandaPendamping extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(35),
-                      child: Image.asset(
-                        'assets/images/map_placeholder.png',
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Tampilan fallback interaktif jika aset gambar belum di-restart
-                          return Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(35),
-                            ),
-                            child: const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.map_outlined, color: Colors.black54, size: 50),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Lakukan Hot Restart (R) atau jalankan ulang\naplikasi untuk memuat peta baru.',
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
+                    GestureDetector(
+                      onTap: () => provider.openMapLocation(context),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(35),
+                        child: (provider.latitude == 0.0 && provider.longitude == 0.0)
+                            ? Container(
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(35),
+                                ),
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.gps_off_rounded, color: Colors.black54, size: 50),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Menunggu lokasi GPS tunanetra...',
+                                        style: TextStyle(
+                                          color: Colors.black54,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                              )
+                            : Image.network(
+                                'https://static-maps.yandex.ru/1.x/?ll=${provider.longitude},${provider.latitude}&z=15&l=map&size=600,300&pt=${provider.longitude},${provider.latitude},pm2rdm',
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    height: 200,
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color.fromARGB(255, 255, 74, 0),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 200,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(35),
+                                    ),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.map_outlined, color: Colors.black54, size: 50),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Koordinat: ${provider.latitude.toStringAsFixed(4)}, ${provider.longitude.toStringAsFixed(4)}',
+                                            style: const TextStyle(
+                                              color: Colors.black54,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text(
+                                            'Ketuk untuk membuka Google Maps secara langsung',
+                                            style: TextStyle(
+                                              color: Colors.black38,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ],
@@ -328,45 +378,17 @@ class _CompanionDevicePanel extends StatelessWidget {
             ),
           ),
 
-          // Wadah Abu-abu (Kotak Sempurna) di belakang SOS Ring Ganda
-          AspectRatio(
-            aspectRatio: 1.0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[400], // Warna latar belakang abu-abu persis gambar
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Center(
-                child: Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black26, width: 6), // Ring luar
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: Container(
-                    padding: const EdgeInsets.all(1),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSosActive ? Colors.red : Colors.grey[500],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'SOS',
-                          style: TextStyle(
-                            color: isSosActive ? Colors.white : Colors.black26,
-                            fontSize: 45,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          // Wadah Ring Ganda Lampu SOS Berkelap-kelip (Interaktif)
+          BlinkingSosLamp(
+            isSosActive: isSosActive,
+            onTap: () {
+              provider.toggleSos();
+              provider.showPopupSnackBar(
+                context,
+                isSosActive ? '✅ Alarm SOS dinonaktifkan!' : '🚨 Alarm SOS diaktifkan!',
+                isSosActive ? Colors.green : Colors.red,
+              );
+            },
           ),
 
           // Kapsul Kode Perangkat
@@ -437,3 +459,127 @@ class _CompanionDevicePanel extends StatelessWidget {
     );
   }
 }
+
+class BlinkingSosLamp extends StatefulWidget {
+  final bool isSosActive;
+  final VoidCallback onTap;
+
+  const BlinkingSosLamp({
+    super.key,
+    required this.isSosActive,
+    required this.onTap,
+  });
+
+  @override
+  State<BlinkingSosLamp> createState() => _BlinkingSosLampState();
+}
+
+class _BlinkingSosLampState extends State<BlinkingSosLamp>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Color?> _outerColorAnimation;
+  late Animation<Color?> _innerColorAnimation;
+  late Animation<Color?> _textColorAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250), // Kedipan sangat cepat
+    );
+
+    _outerColorAnimation = ColorTween(
+      begin: Colors.grey[400],
+      end: const Color.fromARGB(255, 255, 0, 0),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+
+    _innerColorAnimation = ColorTween(
+      begin: Colors.grey[500],
+      end: const Color.fromARGB(255, 255, 0, 0),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+
+    _textColorAnimation = ColorTween(
+      begin: Colors.black26,
+      end: Colors.white,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+
+    if (widget.isSosActive) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant BlinkingSosLamp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSosActive) {
+      _controller.repeat(reverse: true);
+    } else {
+      _controller.stop();
+      _controller.value = 0.0; // Reset ke abu-abu
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AspectRatio(
+        aspectRatio: 1.0,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final Color outerColor = _outerColorAnimation.value ?? Colors.grey[400]!;
+            final Color innerColor = _innerColorAnimation.value ?? Colors.grey[500]!;
+            final Color textColor = _textColorAnimation.value ?? Colors.black26;
+
+            return Container(
+              decoration: BoxDecoration(
+                color: outerColor,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Center(
+                child: Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black26, width: 6), // Ring luar
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
+                    padding: const EdgeInsets.all(1),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: innerColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'SOS',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 45,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+
