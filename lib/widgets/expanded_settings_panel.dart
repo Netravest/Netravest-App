@@ -168,6 +168,21 @@ class ExpandedSettingsPanel extends StatelessWidget {
                   ),
                 ),
 
+                // 5. Sumber Lokasi HP
+                _buildSettingTile(
+                  icon: Icons.gps_fixed_rounded,
+                  title: 'Gunakan GPS HP',
+                  subtitle: 'Gunakan GPS HP tunanetra (bukan GSM Rompi)',
+                  trailing: Switch(
+                    key: const Key('switch_phone_gps'),
+                    value: provider.usePhoneGps,
+                    activeThumbColor: const Color.fromARGB(255, 255, 74, 0),
+                    onChanged: (bool value) {
+                      provider.toggleUsePhoneGps(value, context);
+                    },
+                  ),
+                ),
+
                 // 5. Mode Kidal
                 _buildSettingTile(
                   icon: Icons.front_hand_rounded,

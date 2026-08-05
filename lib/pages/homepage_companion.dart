@@ -7,6 +7,8 @@ import '../widgets/expanded_call_panel.dart';
 import '../widgets/expanded_device_logout_panel.dart';
 import '../widgets/settings_button.dart';
 import '../widgets/animated_pressable.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class BerandaPendamping extends StatelessWidget {
   const BerandaPendamping({super.key});
@@ -194,92 +196,43 @@ class BerandaPendamping extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () => provider.openMapLocation(context),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(35),
-                        child: (provider.latitude == 0.0 && provider.longitude == 0.0)
-                            ? Container(
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(35),
-                                ),
-                                child: const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.gps_off_rounded, color: Colors.black54, size: 50),
-                                      SizedBox(height: 8),
-                                      Text(
-                                        'Menunggu lokasi GPS tunanetra...',
-                                        style: TextStyle(
-                                          color: Colors.black54,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : Image.network(
-                                'https://static-maps.yandex.ru/1.x/?ll=${provider.longitude},${provider.latitude}&z=15&l=map&size=600,300&pt=${provider.longitude},${provider.latitude},pm2rdm',
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    height: 200,
-                                    color: Colors.grey[300],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Color.fromARGB(255, 255, 74, 0),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(35),
-                                    ),
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(Icons.map_outlined, color: Colors.black54, size: 50),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Koordinat: ${provider.latitude.toStringAsFixed(4)}, ${provider.longitude.toStringAsFixed(4)}',
-                                            style: const TextStyle(
-                                              color: Colors.black54,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          const Text(
-                                            'Ketuk untuk membuka Google Maps secara langsung',
-                                            style: TextStyle(
-                                              color: Colors.black38,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(35),
+                      child: (provider.latitude == 0.0 && provider.longitude == 0.0)
+                          ? Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(35),
                               ),
-                      ),
+                              child: const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.gps_off_rounded, color: Colors.black54, size: 50),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Menunggu lokasi GPS tunanetra...',
+                                      style: TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : SizedBox(
+                              height: 200,
+                              width: double.infinity,
+                              child: CompanionInteractiveMap(
+                                latitude: provider.latitude,
+                                longitude: provider.longitude,
+                                onTapMarker: () => provider.openMapLocation(context),
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -578,6 +531,88 @@ class _BlinkingSosLampState extends State<BlinkingSosLamp>
           },
         ),
       ),
+    );
+  }
+}
+
+class CompanionInteractiveMap extends StatefulWidget {
+  final double latitude;
+  final double longitude;
+  final VoidCallback onTapMarker;
+
+  const CompanionInteractiveMap({
+    super.key,
+    required this.latitude,
+    required this.longitude,
+    required this.onTapMarker,
+  });
+
+  @override
+  State<CompanionInteractiveMap> createState() => _CompanionInteractiveMapState();
+}
+
+class _CompanionInteractiveMapState extends State<CompanionInteractiveMap> {
+  late final MapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void didUpdateWidget(covariant CompanionInteractiveMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.latitude != widget.latitude || oldWidget.longitude != widget.longitude) {
+      _mapController.move(
+        LatLng(widget.latitude, widget.longitude),
+        _mapController.camera.zoom,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final location = LatLng(widget.latitude, widget.longitude);
+
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: location,
+        initialZoom: 15.0,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+        ),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: location,
+              width: 50,
+              height: 50,
+              child: GestureDetector(
+                onTap: widget.onTapMarker,
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.red,
+                  size: 45,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

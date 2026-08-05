@@ -2,12 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/geocoding_service.dart';
+import '../services/openstreetmap_service.dart';
 import '../services/telemetry_service.dart';
 import '../pages/sos_activation_page.dart';
 import '../pages/device_login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class EmergencyProvider with ChangeNotifier {
   // Data telemetri dinamis
@@ -44,6 +45,8 @@ class EmergencyProvider with ChangeNotifier {
   bool _isSimulationActive = false;
   Timer? _simulationTimer;
   bool _isLeftHanded = false;
+  bool _usePhoneGps = false;
+  StreamSubscription<Position>? _gpsSubscription;
 
   final List<Map<String, String>> _contacts = [
     {'name': 'Polisi', 'phone': '110'},
@@ -109,6 +112,7 @@ class EmergencyProvider with ChangeNotifier {
   bool get isSimulationActive => _isSimulationActive;
   bool get isSosActive => _isSosActive;
   bool get isLeftHanded => _isLeftHanded;
+  bool get usePhoneGps => _usePhoneGps;
   List<Map<String, String>> get contacts => List.from(_contacts);
   bool get canAddContact => _contacts.length < 5;
   String get deviceCode => _deviceCode;
@@ -157,6 +161,148 @@ class EmergencyProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleUsePhoneGps(bool value, BuildContext context) async {
+    _usePhoneGps = value;
+    notifyListeners();
+
+    if (_usePhoneGps) {
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _usePhoneGps = false;
+        notifyListeners();
+        if (!context.mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Layanan Lokasi Mati', style: TextStyle(color: Colors.white)),
+            content: const Text('Silakan aktifkan layanan lokasi (GPS) pada perangkat Anda.', style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Color.fromARGB(255, 255, 74, 0))),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _usePhoneGps = false;
+          notifyListeners();
+          if (!context.mounted) return;
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.grey[900],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Izin Ditolak', style: TextStyle(color: Colors.white)),
+              content: const Text('Aplikasi memerlukan izin lokasi untuk menggunakan GPS Handphone.', style: TextStyle(color: Colors.white70)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK', style: TextStyle(color: Color.fromARGB(255, 255, 74, 0))),
+                ),
+              ],
+            ),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _usePhoneGps = false;
+        notifyListeners();
+        if (!context.mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Izin Ditolak Permanen', style: TextStyle(color: Colors.white)),
+            content: const Text('Izin lokasi ditolak secara permanen. Silakan aktifkan izin lokasi di pengaturan aplikasi ponsel Anda.', style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Color.fromARGB(255, 255, 74, 0))),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      _gpsSubscription?.cancel();
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
+        );
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _triggerGeocoding(_latitude, _longitude);
+
+        if (_deviceCode.isNotEmpty) {
+          FirebaseFirestore.instance
+              .collection('telemetri_rompi')
+              .doc(_deviceCode)
+              .set({
+                'AlamatLokasi': _address,
+                'LongLatLokasi': GeoPoint(_latitude, _longitude),
+                'Timestamp': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+        }
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error getting initial position: $e');
+      }
+
+      _gpsSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 5,
+        ),
+      ).listen((Position position) {
+        if (_usePhoneGps) {
+          _latitude = position.latitude;
+          _longitude = position.longitude;
+          _triggerGeocoding(_latitude, _longitude);
+
+          if (_deviceCode.isNotEmpty) {
+            FirebaseFirestore.instance
+                .collection('telemetri_rompi')
+                .doc(_deviceCode)
+                .set({
+                  'AlamatLokasi': _address,
+                  'LongLatLokasi': GeoPoint(_latitude, _longitude),
+                  'Timestamp': FieldValue.serverTimestamp(),
+                }, SetOptions(merge: true));
+          }
+          notifyListeners();
+        }
+      }, onError: (error) {
+        debugPrint('Geolocator stream error: $error');
+      });
+    } else {
+      _gpsSubscription?.cancel();
+      _gpsSubscription = null;
+      notifyListeners();
+      
+      if (_deviceCode.isNotEmpty) {
+        refreshStatus(context);
+      }
+    }
+  }
+
   void setRecordingDuration(int val) {
     _recordingDuration = val;
     notifyListeners();
@@ -179,6 +325,9 @@ class EmergencyProvider with ChangeNotifier {
     _mqttHost = 'Google Cloud Firestore';
     _mqttPort = 443;
     _isLeftHanded = false;
+    _usePhoneGps = false;
+    _gpsSubscription?.cancel();
+    _gpsSubscription = null;
     if (_isSimulationActive) {
       toggleSimulation(false);
     } else {
@@ -519,9 +668,9 @@ class EmergencyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Pemicu Geocoding via GeocodingService
+  // Pemicu Geocoding via OpenStreetMapService
   void _triggerGeocoding(double lat, double lng) async {
-    final result = await GeocodingService.reverseGeocode(lat, lng);
+    final result = await OpenStreetMapService.reverseGeocode(lat, lng);
     if (result != null) {
       _address = _isSimulationActive ? '$result (Simulasi)' : result;
     } else {
@@ -639,6 +788,7 @@ class EmergencyProvider with ChangeNotifier {
       if (isSupported) {
         await _pipChannel.invokeMethod('enterPip');
       } else {
+        if (!context.mounted) return;
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -702,6 +852,8 @@ class EmergencyProvider with ChangeNotifier {
   void dispose() {
     _simulationTimer?.cancel();
     _simulationTimer = null;
+    _gpsSubscription?.cancel();
+    _gpsSubscription = null;
     super.dispose();
   }
 }

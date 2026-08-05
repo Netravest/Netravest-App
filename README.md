@@ -31,7 +31,7 @@ lib/
 ├── providers/
 │   └── emergency_provider.dart    # State manager (holds UI state, delegates logic to services)
 ├── services/
-│   ├── geocoding_service.dart     # Service handling reverse geocoding via Nominatim API
+│   ├── openstreetmap_service.dart # Service handling reverse geocoding via Nominatim API
 │   └── telemetry_service.dart     # Service managing MQTT connection & subscriptions
 └── widgets/
     ├── address_bar.dart           # GPS Address bar display & location sharing trigger
