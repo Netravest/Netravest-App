@@ -50,30 +50,6 @@ class InfoPanel extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-                // Indikator Koneksi MQTT ke Rompi
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isMqttConnected ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isMqttConnected ? 'ROMPI ONLINE' : 'ROMPI OFFLINE',
-                      style: TextStyle(
-                        color: isMqttConnected ? Colors.green[800] : Colors.red[800],
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),

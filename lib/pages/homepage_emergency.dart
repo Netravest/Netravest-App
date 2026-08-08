@@ -175,7 +175,7 @@ class BerandaEmergency extends StatelessWidget {
                 iconColor: Colors.black,
                 icon: Icons.space_dashboard_rounded,
                 label: 'Mengambang',
-                onTap: () => provider.toggleFloatingWidget(context),
+                onTap: () {},
               ),
             ),
             const SizedBox(height: 16),

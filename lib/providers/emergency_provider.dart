@@ -55,22 +55,8 @@ class EmergencyProvider with ChangeNotifier {
 
   final bool _enableMqtt;
 
-  static const _pipChannel = MethodChannel('com.example.netravest/pip');
-  bool _isInPipMode = false;
-  bool get isInPipMode => _isInPipMode;
-
-  void _initPipChannel() {
-    _pipChannel.setMethodCallHandler((call) async {
-      if (call.method == 'onPipModeChanged') {
-        _isInPipMode = call.arguments as bool;
-        notifyListeners();
-      }
-    });
-  }
-
   // ignore: prefer_initializing_formals
   EmergencyProvider({bool enableMqtt = true}) : _enableMqtt = enableMqtt {
-    _initPipChannel();
     _startLocalClock();
     // Inisialisasi Telemetry Service
     _telemetryService = TelemetryService(
@@ -782,44 +768,7 @@ class EmergencyProvider with ChangeNotifier {
     showPopupSnackBar(context, '⚙️ Pengaturan...', Colors.grey);
   }
 
-  void toggleFloatingWidget(BuildContext context) async {
-    try {
-      final bool isSupported = await _pipChannel.invokeMethod('isPipSupported') ?? false;
-      if (isSupported) {
-        await _pipChannel.invokeMethod('enterPip');
-      } else {
-        if (!context.mounted) return;
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.grey[900],
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Row(
-              children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                SizedBox(width: 8),
-                Text('Tidak Didukung', style: TextStyle(color: Colors.white)),
-              ],
-            ),
-            content: const Text(
-              'Perangkat Anda tidak mendukung mode Picture-in-Picture secara bawaan.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: Color.fromARGB(255, 255, 74, 0))),
-              ),
-            ],
-          ),
-        );
-      }
-    } on PlatformException catch (e) {
-      debugPrint('Error entering PiP mode: ${e.message}');
-    }
-  }
+
 
   void manageDevice(BuildContext context) {
     if (deviceCode.isNotEmpty) {
