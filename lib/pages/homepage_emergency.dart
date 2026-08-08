@@ -142,24 +142,24 @@ class BerandaEmergency extends StatelessWidget {
       child: isSettingsExpanded
           ? const ExpandedSettingsPanel()
           : (isDeviceExpanded
-              ? const ExpandedDeviceLogoutPanel()
-              : Column(
-                  children: [
-                    const Expanded(flex: 4, child: InfoPanel()),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      flex: 2,
-                      child: SettingsButton(
-                        color: Colors.white,
-                        textColor: Colors.black,
-                        iconColor: Colors.black,
-                        icon: Icons.shape_line_rounded,
-                        label: 'Perangkat',
-                        onTap: () => provider.manageDevice(context),
+                ? const ExpandedDeviceLogoutPanel()
+                : Column(
+                    children: [
+                      const Expanded(flex: 4, child: InfoPanel()),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        flex: 2,
+                        child: SettingsButton(
+                          color: Colors.white,
+                          textColor: Colors.black,
+                          iconColor: Colors.black,
+                          icon: Icons.shape_line_rounded,
+                          label: 'Perangkat',
+                          onTap: () => provider.manageDevice(context),
+                        ),
                       ),
-                    ),
-                  ],
-                )),
+                    ],
+                  )),
     );
 
     final hideRightColumn = isSettingsExpanded || isDeviceExpanded;
@@ -168,16 +168,7 @@ class BerandaEmergency extends StatelessWidget {
       child: Column(
         children: [
           if (!isCallExpanded) ...[
-            Expanded(
-              child: SettingsButton(
-                color: const Color.fromARGB(255, 255, 74, 0),
-                textColor: Colors.black,
-                iconColor: Colors.black,
-                icon: Icons.space_dashboard_rounded,
-                label: 'Mengambang',
-                onTap: () {},
-              ),
-            ),
+            Expanded(child: const AddressBar()),
             const SizedBox(height: 16),
             Expanded(
               child: SettingsButton(
@@ -198,12 +189,7 @@ class BerandaEmergency extends StatelessWidget {
                     onAddContact: () => _showAddContactDialog(context),
                   )
                 : SettingsButton(
-                    color: const Color.fromARGB(
-                      255,
-                      255,
-                      74,
-                      0,
-                    ),
+                    color: const Color.fromARGB(255, 255, 74, 0),
                     textColor: Colors.black,
                     iconColor: Colors.black,
                     icon: Icons.phone_rounded,
@@ -227,21 +213,19 @@ class BerandaEmergency extends StatelessWidget {
               const SOSButton(),
               const SizedBox(height: 16),
 
-              // 2. Baris Alamat & Bagikan Lokasi (Putih)
-              const AddressBar(),
-              const SizedBox(height: 16),
-
               // 3. Grid Menu Utama di bagian bawah
               Expanded(
                 child: Row(
                   children: [
                     if (isLeftHanded) ...[
                       if (!hideRightColumn) rightColumn,
-                      if (!hideRightColumn && !isCallExpanded) const SizedBox(width: 16),
+                      if (!hideRightColumn && !isCallExpanded)
+                        const SizedBox(width: 16),
                       if (!isCallExpanded) leftColumn,
                     ] else ...[
                       if (!isCallExpanded) leftColumn,
-                      if (!hideRightColumn && !isCallExpanded) const SizedBox(width: 16),
+                      if (!hideRightColumn && !isCallExpanded)
+                        const SizedBox(width: 16),
                       if (!hideRightColumn) rightColumn,
                     ],
                   ],

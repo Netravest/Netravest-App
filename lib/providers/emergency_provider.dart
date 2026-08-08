@@ -18,6 +18,7 @@ class EmergencyProvider with ChangeNotifier {
   int _batteryLevel = 0;
   bool _sensorActive = false;
   bool _cameraActive = false;
+  bool _isGpsModuleActive = false;
   bool _isMqttConnected = false;
 
   double _latitude = 0.0;
@@ -87,6 +88,7 @@ class EmergencyProvider with ChangeNotifier {
   int get batteryLevel => _batteryLevel;
   bool get isSensorActive => _sensorActive;
   bool get isCameraActive => _cameraActive;
+  bool get isGpsModuleActive => _isGpsModuleActive;
   bool get isMqttConnected => _isMqttConnected;
   bool get isCallExpanded => _isCallExpanded;
   bool get isSettingsExpanded => _isSettingsExpanded;
@@ -624,6 +626,10 @@ class EmergencyProvider with ChangeNotifier {
     if (data.containsKey('StatusKamera')) {
       _cameraActive = data['StatusKamera'] as bool;
     }
+    if (data.containsKey('StatusGPS')) {
+      _isGpsModuleActive = data['StatusGPS'] as bool;
+    }
+
     if (data.containsKey('sos_active')) {
       _isSosActive = data['sos_active'] as bool;
     }
@@ -794,6 +800,17 @@ class EmergencyProvider with ChangeNotifier {
       if (context.mounted) {
         showPopupSnackBar(context, 'Error: $e', Colors.red);
       }
+    }
+  }
+
+  Future<void> completeTutorial(String userId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({'hasCompletedTutorial': true});
+    } catch (e) {
+      debugPrint('Error completing tutorial: $e');
     }
   }
 

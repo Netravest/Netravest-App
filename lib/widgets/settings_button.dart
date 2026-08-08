@@ -72,15 +72,15 @@ class _SettingsButtonState extends State<SettingsButton>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: widget.color,
-            borderRadius: BorderRadius.circular(50),
+            borderRadius: BorderRadius.circular(35),
           ),
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(widget.icon, color: widget.iconColor, size: 80),
-                const SizedBox(height: 5),
+                Icon(widget.icon, color: widget.iconColor, size: 90),
+                const SizedBox(height: 6),
                 Text(
                   widget.label,
                   style: TextStyle(

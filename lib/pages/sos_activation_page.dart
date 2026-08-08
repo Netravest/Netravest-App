@@ -60,18 +60,11 @@ class SosActivationPage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(35),
                   border: Border.all(color: Colors.red.withAlpha(50), width: 1.5),
                 ),
                 child: Column(
                   children: [
-                    _buildStatusRow(
-                      Icons.videocam_rounded,
-                      'Kamera Rompi',
-                      'Merekam Sekitar...',
-                      Colors.red,
-                    ),
-                    const Divider(color: Colors.white12, height: 24),
                     _buildStatusRow(
                       Icons.phone_in_talk_rounded,
                       'Panggilan Suara',
@@ -96,9 +89,9 @@ class SosActivationPage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 60),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(40),
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
                 onPressed: () => provider.cancelSos(context),

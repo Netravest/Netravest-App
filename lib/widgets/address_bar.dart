@@ -7,37 +7,40 @@ class AddressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengamati data alamat (watch) dan membaca fungsi aksi (read)
     final address = context.select((EmergencyProvider p) => p.address);
     final provider = context.read<EmergencyProvider>();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(50),
+        color: const Color.fromARGB(255, 255, 74, 0),
+        borderRadius: BorderRadius.circular(35),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: GestureDetector(
               onTap: () => provider.copyAddress(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 255, 74, 0),
-                  borderRadius: BorderRadius.circular(50),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
                 ),
-                child: Text(
-                  address,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      address,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
+                      textAlign: TextAlign.start,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -46,26 +49,17 @@ class AddressBar extends StatelessWidget {
           GestureDetector(
             onTap: () => provider.shareLocation(context),
             child: Container(
-              width: 70,
-              height: 70,
-              decoration: const BoxDecoration(
+              width: 50,
+              decoration: BoxDecoration(
                 color: Colors.black,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(25),
               ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.send_rounded, color: Colors.white, size: 28),
-                  Text(
-                    'Bagikan\nLokasi',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+              child: const Center(
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
             ),
           ),
